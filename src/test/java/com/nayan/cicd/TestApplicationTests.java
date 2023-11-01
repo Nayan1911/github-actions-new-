@@ -1,10 +1,10 @@
-package com.nayan.githubcicdactions;
+package com.nayan.cicd;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class GithubCicdActionsNewApplicationTests {
+class TestApplicationTests {
 
     @Test
     void contextLoads() {
