@@ -90,15 +90,11 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Debug Build Context
-        run: |
-          ls -la
-          ls -la target
-        working-directory: ./
+
       - name: Build Docker image
         run: |
           TAG=${{ env.TAG }}
-          docker build --no-cache -t $TAG .
+          docker build --no-cache -t $TAG -f Dockerfile .
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
