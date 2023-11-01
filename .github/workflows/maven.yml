@@ -37,6 +37,7 @@ jobs:
         run: |
           mvn clean install
           ls -la
+          ls -la ./target
 
       - name: Checkout Main Branch
         uses: actions/checkout@v2
