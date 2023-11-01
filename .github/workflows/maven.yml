@@ -1,4 +1,4 @@
-name: Java CI with Maven
+name: Project CICD
 
 on:
   push:
@@ -8,17 +8,99 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
-        
-    - name: Build with Maven
-      run: mvn clean install 
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Assign Date
+        run:
+          BRANCH=$(echo "$GITHUB_REF" | awk -F'/' '{print $3}')
+          echo "BRANCH=$(echo "$GITHUB_REF" | awk -F'/' '{print $3}')" >> $GITHUB_ENV && echo "DATE=$(date +'%d-%m-%Y')" >> $GITHUB_ENV
+
+      - name: Checking
+        run:
+          echo $BRANCH
+          echo $DATE
+
+      - name: Checking final variable
+        run:
+          echo $image_new
+
+      - name: Build with Maven
+        run: mvn clean install
+
+      - name: Checkout Main Branch
+        uses: actions/checkout@v2
+
+      - name: Read Data from File
+        id: read-file
+        run: |
+          DATA=$(cat .Metadata) 
+          echo "PULLED_DATA=$DATA" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Use Pulled Data
+        run: |
+          PULLED_DATA=$PULLED_DATA
+          echo "Pulled data: $PULLED_DATA"
+        env:
+          PULLED_DATA: ${{ env.PULLED_DATA }}
+
+      - name: Debugging
+        id: check-tag
+        run: |
+          IMAGE_NAME="sharmanayan/nayan"
+          TAG_WITHOUT_BUILD_NUMBER="${{ env.BRANCH }}-${{ env.DATE }}-${{ env.PULLED_DATA }}" 
+          API_URL="https://hub.docker.com/v2/repositories/$IMAGE_NAME/tags/?page_size=10&ordering=last_updated"
+          AUTH_HEADER="Authorization: Bearer ${{ secrets.DOCKER_TOKEN }}"
+          RESPONSE=$(curl --location --header "$AUTH_HEADER" "$API_URL")
+          LATEST_TAG=$(echo "$RESPONSE" | jq -r ".results[].name | select(. | test(\"$TAG_WITHOUT_BUILD_NUMBER\"))" | sort -rV | head -n 1)
+          echo $LATEST_TAG
+          if [ -n "$LATEST_TAG" ]; then
+            numeric_part="${LATEST_TAG##*.}"
+            echo $numeric_part
+            numeric_part=$((numeric_part + 1))
+            echo $numeric_part
+            TAG=$IMAGE_NAME:$TAG_WITHOUT_BUILD_NUMBER.$numeric_part
+            echo $TAG
+            echo "TAG=$TAG" >> $GITHUB_ENV
+          else
+            TAG=$IMAGE_NAME:$TAG_WITHOUT_BUILD_NUMBER.1
+            echo $TAG
+            echo "TAG=$TAG" >> $GITHUB_ENV
+          fi
+
+
+      - name: Check Set Tag
+        run: |
+          echo $TAG 
+
+
+      - name: Log in to Docker Hub
+        run: |
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        run: |
+          TAG=${{ env.TAG }}
+          docker build --no-cache -t $TAG .
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
+      - name: Push Docker image
+        run: |
+          TAG=${{ env.TAG }}
+          docker push $TAG
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
