@@ -96,7 +96,7 @@ jobs:
       - name: Build Docker image
         run: |
           TAG=${{ env.TAG }}
-          docker build --no-cache -t $TAG -f Dockerfile .
+          docker build  -t $TAG -f Dockerfile .
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
