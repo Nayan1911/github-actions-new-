@@ -39,8 +39,6 @@ jobs:
           ls -la
           ls -la ./target
 
-      - name: Checkout Main Branch
-        uses: actions/checkout@v2
 
       - name: Read Data from File
         id: read-file
