@@ -9,8 +9,8 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.nayan</groupId>
-    <artifactId>github-cicd-actions-new</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>nayan</artifactId>
+    <version>1</version>
     <name>github-cicd-actions-new</name>
     <description>github-cicd-actions-new</description>
     <properties>
