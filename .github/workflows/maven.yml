@@ -35,7 +35,9 @@ jobs:
           echo $image_new
 
       - name: Build with Maven
-        run: mvn install
+        run: |
+          mvn clean install
+          ls -la
 
       - name: Checkout Main Branch
         uses: actions/checkout@v2
